@@ -32,7 +32,7 @@ type Prediction struct {
 	} `json:"metrics"`
 }
 
-func (s *PredictionsService) Create(model Model, input any) (*Prediction, error) {
+func (s *PredictionsService) Create(modelID, input any) (*Prediction, error) {
 	req, err := s.client.baseRequest("POST", "predictions")
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (s *PredictionsService) Create(model Model, input any) (*Prediction, error)
 
 	body, err := json.Marshal(
 		map[string]interface{}{
-			"version": model.LatestVersion.ID,
+			"version": modelID,
 			"input":   input,
 		},
 	)

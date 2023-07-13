@@ -48,7 +48,7 @@ type Destination struct {
 }
 
 var destination Destination
-prediction, err := client.Predictions.Await("PREDICTION_ID", &destination)
+err := client.Predictions.Await("PREDICTION_ID", &destination)
 ```
 
 #### Cancelling a prediction

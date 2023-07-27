@@ -15,17 +15,26 @@ type service struct {
 }
 
 type Client struct {
-	token  string
-	common service
+	token   string
+	common  service
+	baseURL string
 
 	Predictions *PredictionsService
 	Models      *ModelsService
 }
 
-func NewClient(token string) *Client {
+type ClientOption func(c *Client)
+
+func NewClient(token string, options ...ClientOption) *Client {
 	c := &Client{
-		token: token,
+		token:   token,
+		baseURL: baseURL,
 	}
+
+	for _, option := range options {
+		option(c)
+	}
+
 	c.common.client = c
 
 	return &Client{
@@ -35,8 +44,14 @@ func NewClient(token string) *Client {
 	}
 }
 
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *Client) {
+		c.baseURL = baseURL
+	}
+}
+
 func (c *Client) baseRequest(ctx context.Context, method string, endpoint string) (*http.Request, error) {
-	url := fmt.Sprintf(baseURL, endpoint)
+	url := fmt.Sprintf(c.baseURL, endpoint)
 	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return nil, err

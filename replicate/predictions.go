@@ -4,10 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
+)
+
+var (
+	ErrPredictionFailed   = errors.New("prediction failed")
+	ErrPredictionCanceled = errors.New("prediction canceled")
 )
 
 type PredictionsService service
@@ -114,8 +120,10 @@ func (s *PredictionsService) Await(ctx context.Context, id string, destination a
 					return err
 				}
 				return json.Unmarshal(b, &destination)
-			case "failed", "canceled":
-				return fmt.Errorf("Prediction failed or was canceled")
+			case "failed":
+				return ErrPredictionFailed
+			case "canceled":
+				return ErrPredictionCanceled
 			case "starting", "processing":
 				time.Sleep(1 * time.Second)
 			}

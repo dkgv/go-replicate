@@ -1,6 +1,7 @@
 package replicate
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 )
@@ -34,9 +35,9 @@ func NewClient(token string) *Client {
 	}
 }
 
-func (c *Client) baseRequest(method string, endpoint string) (*http.Request, error) {
+func (c *Client) baseRequest(ctx context.Context, method string, endpoint string) (*http.Request, error) {
 	url := fmt.Sprintf(baseURL, endpoint)
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return nil, err
 	}

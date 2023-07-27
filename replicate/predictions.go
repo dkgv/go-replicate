@@ -2,6 +2,7 @@ package replicate
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,8 +33,8 @@ type Prediction struct {
 	} `json:"metrics"`
 }
 
-func (s *PredictionsService) Create(modelID, input any) (*Prediction, error) {
-	req, err := s.client.baseRequest("POST", "predictions")
+func (s *PredictionsService) Create(ctx context.Context, modelID, input any) (*Prediction, error) {
+	req, err := s.client.baseRequest(ctx, "POST", "predictions")
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +68,8 @@ func (s *PredictionsService) Create(modelID, input any) (*Prediction, error) {
 	return &prediction, nil
 }
 
-func (s *PredictionsService) Get(id string) (*Prediction, error) {
-	req, err := s.client.baseRequest("GET", fmt.Sprintf("predictions/%s", id))
+func (s *PredictionsService) Get(ctx context.Context, id string) (*Prediction, error) {
+	req, err := s.client.baseRequest(ctx, "GET", fmt.Sprintf("predictions/%s", id))
 	if err != nil {
 		return nil, err
 	}
@@ -90,51 +91,40 @@ func (s *PredictionsService) Get(id string) (*Prediction, error) {
 	return &prediction, nil
 }
 
-func (s *PredictionsService) Await(id string, destination any) error {
+func (s *PredictionsService) Await(ctx context.Context, id string, destination any) error {
 	var (
 		prediction *Prediction
 		err        error
 	)
 
-	ok := make(chan bool)
-	go func() {
-		for {
-			prediction, err = s.Get(id)
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			prediction, err = s.Get(ctx, id)
 			if err != nil {
-				ok <- false
-				return
+				return err
 			}
 
 			switch prediction.Status {
 			case "succeeded":
-				ok <- true
-				return
-
+				b, err := json.Marshal(prediction.Output)
+				if err != nil {
+					return err
+				}
+				return json.Unmarshal(b, &destination)
 			case "failed", "canceled":
-				ok <- false
-				return
-
+				return fmt.Errorf("Prediction failed or was canceled")
 			case "starting", "processing":
 				time.Sleep(1 * time.Second)
 			}
 		}
-	}()
-
-	success := <-ok
-	if !success {
-		return fmt.Errorf("Prediction failed or was canceled")
 	}
-
-	b, err := json.Marshal(prediction.Output)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(b, &destination)
 }
 
-func (s *PredictionsService) Cancel(id string) error {
-	req, err := s.client.baseRequest("POST", fmt.Sprintf("predictions/%s/cancel", id))
+func (s *PredictionsService) Cancel(ctx context.Context, id string) error {
+	req, err := s.client.baseRequest(ctx, "POST", fmt.Sprintf("predictions/%s/cancel", id))
 	if err != nil {
 		return err
 	}

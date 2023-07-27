@@ -1,6 +1,7 @@
 package replicate
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -29,9 +30,9 @@ type ModelVersion struct {
 	CogVersion string    `json:"cog_version"`
 }
 
-func (s *ModelsService) Get(owner string, name string) (*Model, error) {
+func (s *ModelsService) Get(ctx context.Context, owner string, name string) (*Model, error) {
 	url := fmt.Sprintf("models/%s/%s", owner, name)
-	req, err := s.client.baseRequest("GET", url)
+	req, err := s.client.baseRequest(ctx, "GET", url)
 	if err != nil {
 		return nil, err
 	}

@@ -21,7 +21,7 @@ client := replicate.NewClient("REPLICATE_TOKEN")
 #### Retrieving a model
 
 ```go
-model, err := client.Models.Get("OWNER", "MODEL_NAME")
+model, err := client.Models.Get(ctx, "OWNER", "MODEL_NAME")
 ```
 
 ### Predictions
@@ -31,13 +31,13 @@ model, err := client.Models.Get("OWNER", "MODEL_NAME")
 ```go
 var input any
 // ...
-prediction, err := client.Predictions.Create("MODEL_ID", input)
+prediction, err := client.Predictions.Create(ctx, "MODEL_ID", input)
 ```
 
 #### Getting a prediction
 
 ```go
-prediction, err := client.Predictions.Get("PREDICTION_ID")
+prediction, err := client.Predictions.Get(ctx, "PREDICTION_ID")
 ```
 
 #### Awaiting a prediction
@@ -48,11 +48,11 @@ type Destination struct {
 }
 
 var destination Destination
-err := client.Predictions.Await("PREDICTION_ID", &destination)
+err := client.Predictions.Await(ctx, "PREDICTION_ID", &destination)
 ```
 
 #### Cancelling a prediction
 
 ```go
-err := client.Predictions.Cancel("PREDICTION_ID")
+err := client.Predictions.Cancel(ctx, "PREDICTION_ID")
 ```

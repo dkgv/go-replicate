@@ -34,6 +34,19 @@ var input any
 prediction, err := client.Predictions.Create(ctx, "MODEL_ID", input)
 ```
 
+#### Creating a prediction with a webhook
+
+```go
+webhook := replicate.Webook{
+    CallbackURL: "https://example.com/callback",
+    Events: []replicate.PredictionEvent{
+        replicate.EventPredictionStarted,
+        replicate.EventPredictionCompleted,
+    },
+}
+prediction, err := client.Predictions.CreateWithWebhook(ctx, "MODEL_ID", input, webhook)
+```
+
 #### Getting a prediction
 
 ```go

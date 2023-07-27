@@ -18,6 +18,15 @@ var (
 
 type PredictionsService service
 
+type PredictionEvent string
+
+const (
+	EventPredictionStarted   PredictionEvent = "start"
+	EventPredictionOutputted PredictionEvent = "output"
+	EventPredictionLogged    PredictionEvent = "logs"
+	EventPredictionCompleted PredictionEvent = "completed"
+)
+
 type Prediction struct {
 	ID      string `json:"id"`
 	Version string `json:"version"`
@@ -37,18 +46,36 @@ type Prediction struct {
 	Metrics     struct {
 		PredictTime float64 `json:"predict_time"`
 	} `json:"metrics"`
+	Webhook             string            `json:"webhook,omitempty"`
+	WebhookEventsFilter []PredictionEvent `json:"webhook_events_filter,omitempty"`
 }
 
-func (s *PredictionsService) Create(ctx context.Context, modelID, input any) (*Prediction, error) {
+type Webhook struct {
+	CallbackURL string            `json:"webhook"`
+	Events      []PredictionEvent `json:"webhook_events_filter"`
+}
+
+func (s *PredictionsService) Create(ctx context.Context, modelID string, input any) (*Prediction, error) {
+	return s.CreateWithWebhook(ctx, modelID, input, Webhook{})
+}
+
+func (s *PredictionsService) CreateWithWebhook(ctx context.Context, modelID string, input any, webhook Webhook) (*Prediction, error) {
 	req, err := s.client.baseRequest(ctx, "POST", "predictions")
 	if err != nil {
 		return nil, err
 	}
 
 	body, err := json.Marshal(
-		map[string]interface{}{
-			"version": modelID,
-			"input":   input,
+		struct {
+			Version string            `json:"version"`
+			Input   any               `json:"input"`
+			Webhook string            `json:"webhook,omitempty"`
+			Events  []PredictionEvent `json:"webhook_events_filter,omitempty"`
+		}{
+			Version: modelID,
+			Input:   input,
+			Webhook: webhook.CallbackURL,
+			Events:  webhook.Events,
 		},
 	)
 	if err != nil {
